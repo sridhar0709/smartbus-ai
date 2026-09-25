@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
           student.email.toLowerCase() !== normalizedEmail) {
         return json({ error: "Student ID and registered college email did not match an active roster record." }, 403);
       }
+      if (action === "student_login" && !student.auth_user_id) return json({ error: "Register your student account first." }, 403);
       if (action === "student_register") {
         if (student.auth_user_id) return json({ error: "This student ID is already registered. Use Student login." }, 409);
         const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -57,6 +58,19 @@ Deno.serve(async (req) => {
         }
       }
       return json({ email: normalizedEmail, message: "Roster verified. Requesting a one-time code." });
+    }
+
+    if (action === "admin_login") {
+      const { data: users, error: usersError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (usersError) return json({ error: "Could not verify admin access." }, 500);
+      const account = users.users.find((u) => u.email?.toLowerCase() === normalizedEmail);
+      if (!account) return json({ error: "No authorized admin account found for this email." }, 403);
+      const { data: membership, error: memberError } = await admin.from("college_members")
+        .select("role").eq("college_id", collegeId).eq("user_id", account.id).maybeSingle();
+      if (memberError || membership?.role !== "college_admin") {
+        return json({ error: "This email is not assigned the college admin role." }, 403);
+      }
+      return json({ email: normalizedEmail, message: "Admin access verified." });
     }
 
     if (action === "admin_register") {
