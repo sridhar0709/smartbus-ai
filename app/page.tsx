@@ -102,20 +102,15 @@ export default function Home() {
       const action = portal === "student"
         ? (mode === "register" ? "student_register" : "student_login")
         : (mode === "register" ? "admin_register" : "admin_login");
-      if (action === "admin_login") {
-        const { error } = await supabase.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: false } });
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.functions.invoke("auth-portal", {
-          body: { action, studentId, email, invitationCode },
-        });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: String(data.email), options: { shouldCreateUser: false },
-        });
-        if (otpError) throw otpError;
-      }
+      const { data, error } = await supabase.functions.invoke("auth-portal", {
+        body: { action, studentId, email, invitationCode },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: String(data.email), options: { shouldCreateUser: false },
+      });
+      if (otpError) throw otpError;
       setAuthStep("otp");
       setAuthMessage("One-time code sent to your registered email. Check your inbox.");
     } catch (error) {
