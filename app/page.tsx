@@ -13,6 +13,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [email, setEmail] = useState("");
+  const [portal, setPortal] = useState<"student" | "admin">("student");
+  const [authStep, setAuthStep] = useState<"details" | "otp">("details");
+  const [studentId, setStudentId] = useState("");
+  const [invitationCode, setInvitationCode] = useState("");
+  const [otp, setOtp] = useState("");
   const [authMessage, setAuthMessage] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -89,6 +94,40 @@ export default function Home() {
     setAuthBusy(false);
   };
 
+  const startPortalAuth = async (event: React.FormEvent, mode: "login" | "register") => {
+    event.preventDefault();
+    if (!supabase) { setAuthMessage("Authentication is not configured. Contact your college administrator."); return; }
+    setAuthBusy(true); setAuthMessage("");
+    try {
+      const action = portal === "student"
+        ? (mode === "register" ? "student_register" : "student_login")
+        : (mode === "register" ? "admin_register" : "admin_login");
+      const { data, error } = await supabase.functions.invoke("auth-portal", {
+        body: { action, studentId, email, invitationCode },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: String(data.email), options: { shouldCreateUser: false },
+      });
+      if (otpError) throw otpError;
+      setAuthStep("otp");
+      setAuthMessage("One-time code sent to your registered email. Check your inbox.");
+    } catch (error) {
+      setAuthMessage(error instanceof Error ? error.message : "Could not start secure sign-in.");
+    } finally { setAuthBusy(false); }
+  };
+
+  const verifyPortalOtp = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!supabase) return;
+    setAuthBusy(true); setAuthMessage("");
+    const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: otp.trim(), type: "email" });
+    if (error) setAuthMessage(error.message);
+    else { setAuthMessage("Verified. Loading your authorized portal…"); setAuthStep("details"); setOtp(""); }
+    setAuthBusy(false);
+  };
+
   const nav = [{ label: "Overview", icon: Activity }, { label: "Live fleet", icon: Bus }, { label: "Attendance", icon: Users }, { label: "Routes", icon: Route }, { label: "Alerts", icon: Bell }];
   return (
     <main className="shell">
@@ -108,7 +147,16 @@ export default function Home() {
           <div className="page-heading"><div><div className="eyebrow"><span className="eyebrow-dot"/> {new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase()}</div><h1>Fleet overview <span>✦</span></h1><p>{loading ? "Loading your authorized college data…" : "Operational data from your Supabase workspace."}</p></div><button className="date-btn" onClick={()=>setDatePickerOpen((open)=>!open)} aria-expanded={datePickerOpen}><Clock3 size={16}/> {dashboardDate===new Date().toLocaleDateString("en-CA")?"Today":dashboardDate} <ChevronDown size={15}/></button></div>
           {datePickerOpen && <section className="panel" style={{padding:16,marginBottom:20}}><label htmlFor="dashboard-date" style={{display:"block",marginBottom:8,fontWeight:600}}>Dashboard date</label><input id="dashboard-date" type="date" value={dashboardDate} max={new Date().toLocaleDateString("en-CA")} onChange={(e)=>setDashboardDate(e.target.value)} style={{padding:10,borderRadius:8}}/><p style={{marginTop:8,fontSize:13}}>The fleet, GPS, trip and alert panels show the latest authorized records. Attendance count currently represents today only.</p></section>}
           {helpOpen && <section className="panel" style={{padding:20,marginBottom:20}}><div className="panel-title">SmartBus AI operations guide</div><p>Use Overview for fleet totals and recent alerts. Open Live fleet to search buses and select a vehicle. Routes lists active routes visible to your account. Attendance shows the authorized count for today. If data is missing, confirm you are signed in with your college staff account and that your Supabase Row Level Security policies permit access.</p><button className="date-btn" onClick={()=>setHelpOpen(false)}>Close guide</button></section>}
-          {!snapshot?.authenticated && <section className="panel" style={{padding:20,marginBottom:20}}><div className="panel-title">{snapshot?.configured === false ? "Supabase is not configured" : "Staff sign-in required"}</div><p style={{margin:"8px 0 14px"}}>{snapshot?.configured === false ? "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in Vercel project environment variables." : "Enter your authorized college staff email. Supabase authentication and existing row-level security determine which college data you can access."}</p>{snapshot?.configured !== false && <form onSubmit={sendMagicLink} style={{display:"flex",gap:8,flexWrap:"wrap"}}><input aria-label="Staff email" type="email" required placeholder="staff@college.edu" value={email} onChange={e=>setEmail(e.target.value)} style={{padding:12,borderRadius:10,minWidth:220}}/><button className="date-btn" disabled={authBusy}>{authBusy?"Sending…":"Send secure sign-in link"}</button></form>}{authMessage&&<p role="status">{authMessage}</p>}</section>}
+          {!snapshot?.authenticated && <section className="panel" style={{padding:24,marginBottom:20,maxWidth:560,marginInline:"auto"}}><div className="panel-title">{snapshot?.configured === false ? "Authentication setup required" : "Welcome to SmartBus AI"}</div><p style={{margin:"8px 0 18px",color:"var(--muted)"}}>{snapshot?.configured === false ? "Configure the Supabase URL and publishable key in Vercel." : "Sign in to your secure college transport portal using email OTP."}</p>{snapshot?.configured !== false && <>
+<div style={{display:"flex",gap:8,marginBottom:18}}><button type="button" className="date-btn" aria-pressed={portal==="student"} onClick={()=>{setPortal("student");setAuthStep("details");setAuthMessage("");}}><Users size={15}/> Student</button><button type="button" className="date-btn" aria-pressed={portal==="admin"} onClick={()=>{setPortal("admin");setAuthStep("details");setAuthMessage("");}}><ShieldCheck size={15}/> Admin</button></div>
+{authStep==="details" ? <form onSubmit={(e)=>void startPortalAuth(e,"login")} style={{display:"grid",gap:12}}>
+{portal==="student" && <input aria-label="Student ID" required placeholder="Student ID / roll number" value={studentId} onChange={e=>setStudentId(e.target.value)} style={{padding:12,borderRadius:10}}/>}
+<input aria-label="College email" type="email" required placeholder="Registered college email" value={email} onChange={e=>setEmail(e.target.value)} style={{padding:12,borderRadius:10}}/>
+{portal==="admin" && <input aria-label="Admin invitation code" type="password" placeholder="Invitation code (for first-time signup)" value={invitationCode} onChange={e=>setInvitationCode(e.target.value)} style={{padding:12,borderRadius:10}}/>}
+<button className="date-btn" disabled={authBusy}>{authBusy?"Please wait…":"Send OTP to sign in"}</button>
+<button type="button" className="text-action" onClick={(e)=>void startPortalAuth(e as unknown as React.FormEvent, "register")} disabled={authBusy}>{portal==="student"?"Register student account":"Create admin account with invitation"}</button>
+</form> : <form onSubmit={verifyPortalOtp} style={{display:"grid",gap:12}}><input aria-label="Email OTP" inputMode="numeric" autoComplete="one-time-code" required minLength={6} maxLength={8} placeholder="Enter email OTP" value={otp} onChange={e=>setOtp(e.target.value)} style={{padding:12,borderRadius:10}}/><button className="date-btn" disabled={authBusy}>{authBusy?"Verifying…":"Verify OTP"}</button><button type="button" className="text-action" onClick={()=>setAuthStep("details")}>Back</button></form>}
+</>}{authMessage&&<p role="status" style={{marginTop:14}}>{authMessage}</p>}</section>}
           {dataError&&<section className="panel" role="alert" style={{padding:16,marginBottom:20}}><b>Supabase request failed</b><p>{dataError}</p><button className="date-btn" onClick={()=>{setLoading(true);void load();}}>Retry</button></section>}
           {active === "Overview" ? <>
           <div className="stats-grid">
