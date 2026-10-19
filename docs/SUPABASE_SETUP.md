@@ -1,21 +1,18 @@
-# SmartBus AI: Supabase database setup
+# SmartBus AI: Supabase connection and deployment
 
-This guide connects the existing Next.js dashboard to a Supabase project without exposing privileged credentials.
+## Connected Supabase project
 
-## 1. Configure environment variables
+- Project: `smartbus-ai`
+- Project ref: `luvknncxtvgfwlshxtrs`
+- Region: `ap-south-1`
+- API URL: `https://luvknncxtvgfwlshxtrs.supabase.co`
+- Existing migration: `20260924173435_smartbus_core_schema`
 
-Set these variables in `.env.local` for local development and in **Vercel → Project → Settings → Environment Variables** for Preview and Production:
+The live project already contained the SmartBus schema. Do not create duplicate tables or replace its existing schema with a generic starter schema. The dashboard compatibility migration is tracked at `supabase/migrations/20261019150000_dashboard_compatibility.sql`.
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_YOUR_KEY
-```
+## Dashboard tables and expected columns
 
-Use the URL and publishable key from the same Supabase project. The repository's `.env.example` contains a project URL, but verify that it is the intended active project before deploying. Do not put a service-role or secret key in a `NEXT_PUBLIC_*` variable or commit credentials.
-
-## 2. Verify the database schema
-
-The dashboard expects these tables and columns (exact names matter):
+The Next.js dashboard reads these tables through the publishable key and the signed-in user's session:
 
 - `buses`: `id, bus_number, registration_number, capacity, status, route_id, driver_id`
 - `routes`: `id, name, direction, active`
@@ -25,29 +22,37 @@ The dashboard expects these tables and columns (exact names matter):
 - `attendance`: `id, attendance_date`
 - `alerts`: `id, alert_type, message, delivery_status, created_at`
 
-This repository does not currently include a schema migration for those tables. Verify the actual Supabase schema before applying any migration. Do not blindly create duplicate tables in a project that already has operational data.
+The dashboard compatibility migration adds the missing `buses.route_id` and `buses.driver_id` references with college-scoped foreign keys, adds query indexes, and adds member-scoped SELECT policies for `alerts`, `attendance`, and `gps_positions`. It does not delete or seed data.
 
-## 3. Apply authorization before real use
+## Environment variables
 
-The browser client uses the public publishable key. That is expected, but **RLS must be enabled and suitable policies must be installed on every exposed table**. Create a membership model linking authenticated users to a college, then scope every SELECT/INSERT/UPDATE/DELETE policy through that membership. Never solve an empty dashboard by disabling RLS or allowing all authenticated users to read every college's data.
+Vercel project `smartbus-ai` has these variables configured for Production, Preview, and Development:
 
-Do not apply generic permissive policies to real student, GPS, driver, or attendance data. Policy design depends on the existing table definitions and membership model; inspect both before writing production policies.
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://luvknncxtvgfwlshxtrs.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_... # use the stored Vercel value
+```
 
-## 4. Enable email sign-in
+The URL and publishable key are public-client credentials, not admin secrets. Never put a service-role or secret key in any `NEXT_PUBLIC_*` variable or commit credentials to Git.
 
-In Supabase Authentication settings, enable the intended email OTP/magic-link provider and configure the site's URL and allowed redirect URLs. Add the deployed Vercel domain and localhost only for development. Test sign-in, link expiry, sign-out, and access after sign-out.
+For local development, copy the same two values from Supabase Project Settings into `.env.local`. Do not copy a real key into `.env.example`.
 
-## 5. Deploy and verify
+## Authentication and authorization
 
-After adding environment variables, redeploy Vercel so the build receives them. Test using an authorized staff account:
+The app checks the current user with `supabase.auth.getUser()` before querying operational data. The database has RLS enabled and uses the existing `private.is_college_member(...)` / `private.has_college_role(...)` helpers. The compatibility migration adds scoped read policies for the three dashboard tables identified by the security advisor. Re-run the Supabase security advisor after schema changes and review its results.
 
-1. Missing environment variables show the setup message.
-2. Signed-out users see the sign-in form, not operational data.
-3. Authorized users see only their college's records.
-4. The dashboard refreshes and reports query errors rather than hiding them.
-5. An account from another college cannot read or modify this college's records.
-6. No service-role key is present in browser bundles, Git history, or public environment variables.
+In Supabase Authentication settings, ensure email OTP/magic-link sign-in is enabled and the deployed site's URL plus allowed redirect URLs are configured. Verify sign-in, sign-out, expired links, and a user without a college membership. Do not disable RLS to make an empty dashboard display data.
 
-## Current implementation status
+## Deploy and verify
 
-`lib/supabase.ts` uses the Supabase SSR browser client, validates the current user with `auth.getUser()`, runs the dashboard's existing live queries, and derives the latest GPS point per bus. This is client-side session-aware data access, **not** a substitute for RLS. A production-ready launch remains blocked until the real schema, college membership model, RLS policies, and Vercel environment variables are verified and tested.
+1. Review the GitHub pull request for the client-code and documentation changes.
+2. Run `npm run lint` and `npm run build` in the repository.
+3. Merge the reviewed PR to `main` to trigger the production Git deployment.
+4. If Vercel has not automatically deployed the merged commit, trigger a deployment manually.
+5. Test using an authorized staff account: verify fleet, routes, drivers, current GPS positions, today's attendance count, and recent alerts.
+6. Confirm an unauthenticated user sees no operational data and a member of another college cannot read this college's rows.
+7. Check the Vercel build/runtime logs and Supabase security advisor if any table query fails.
+
+## Verified live state
+
+On 2026-10-19, the Supabase project was reachable, its existing tables and RLS policies were inspected, and the compatibility SQL ran successfully. The Supabase security advisor no longer reported the previously missing SELECT policies for `alerts`, `attendance`, and `gps_positions`; it still reported leaked-password protection disabled. Vercel environment variables were updated for all three deployment environments. The GitHub application changes remain in draft PR review and the production website has not been verified end-to-end with an authenticated staff account.
