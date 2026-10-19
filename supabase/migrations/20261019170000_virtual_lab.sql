@@ -84,15 +84,30 @@ alter table public.simulation_locations enable row level security;
 alter table public.simulation_events enable row level security;
 grant select, insert, update, delete on public.simulation_runs, public.simulation_buses, public.simulation_students, public.simulation_locations, public.simulation_events to authenticated;
 drop policy if exists simulation_runs_college_member_access on public.simulation_runs;
-create policy simulation_runs_college_member_access on public.simulation_runs for all to authenticated using (private.is_college_member(college_id)) with check (private.is_college_member(college_id) and created_by = (select auth.uid()));
+drop policy if exists simulation_runs_member_read on public.simulation_runs;
+drop policy if exists simulation_runs_owner_insert on public.simulation_runs;
+drop policy if exists simulation_runs_owner_update on public.simulation_runs;
+drop policy if exists simulation_runs_owner_delete on public.simulation_runs;
+create policy simulation_runs_member_read on public.simulation_runs for select to authenticated using (private.is_college_member(college_id));
+create policy simulation_runs_owner_insert on public.simulation_runs for insert to authenticated with check (private.is_college_member(college_id) and created_by = (select auth.uid()));
+create policy simulation_runs_owner_update on public.simulation_runs for update to authenticated using (private.is_college_member(college_id) and created_by = (select auth.uid())) with check (private.is_college_member(college_id) and created_by = (select auth.uid()));
+create policy simulation_runs_owner_delete on public.simulation_runs for delete to authenticated using (private.is_college_member(college_id) and created_by = (select auth.uid()));
 drop policy if exists simulation_buses_college_member_access on public.simulation_buses;
-create policy simulation_buses_college_member_access on public.simulation_buses for all to authenticated using (private.is_college_member(college_id)) with check (private.is_college_member(college_id));
+create policy simulation_buses_owner_access on public.simulation_buses for all to authenticated
+  using (exists (select 1 from public.simulation_runs r where r.id = simulation_buses.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)))
+  with check (exists (select 1 from public.simulation_runs r where r.id = simulation_buses.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)));
 drop policy if exists simulation_students_college_member_access on public.simulation_students;
-create policy simulation_students_college_member_access on public.simulation_students for all to authenticated using (private.is_college_member(college_id)) with check (private.is_college_member(college_id));
+create policy simulation_students_owner_access on public.simulation_students for all to authenticated
+  using (exists (select 1 from public.simulation_runs r where r.id = simulation_students.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)))
+  with check (exists (select 1 from public.simulation_runs r where r.id = simulation_students.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)));
 drop policy if exists simulation_locations_college_member_access on public.simulation_locations;
-create policy simulation_locations_college_member_access on public.simulation_locations for all to authenticated using (private.is_college_member(college_id)) with check (private.is_college_member(college_id));
+create policy simulation_locations_owner_access on public.simulation_locations for all to authenticated
+  using (exists (select 1 from public.simulation_runs r where r.id = simulation_locations.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)))
+  with check (exists (select 1 from public.simulation_runs r where r.id = simulation_locations.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)));
 drop policy if exists simulation_events_college_member_access on public.simulation_events;
-create policy simulation_events_college_member_access on public.simulation_events for all to authenticated using (private.is_college_member(college_id)) with check (private.is_college_member(college_id));
+create policy simulation_events_owner_access on public.simulation_events for all to authenticated
+  using (exists (select 1 from public.simulation_runs r where r.id = simulation_events.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)))
+  with check (exists (select 1 from public.simulation_runs r where r.id = simulation_events.run_id and r.created_by = (select auth.uid()) and private.is_college_member(r.college_id)));
 comment on table public.simulation_runs is 'Isolated Virtual Lab runs; never mixed with operational fleet tables.';
 comment on table public.simulation_buses is 'Synthetic buses owned by a simulation run.';
 comment on table public.simulation_students is 'Synthetic student identities and non-production RFID UIDs for simulation.';
