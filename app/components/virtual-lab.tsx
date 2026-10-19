@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, Bus, CheckCircle2, CirclePlay, CreditCard, MapPin, Pause, Play, Radio, RotateCcw, Users, Wifi } from "lucide-react";
+import { Activity, AlertTriangle, Bus, CheckCircle2, CirclePlay, CreditCard, MapPin, Pause, Play, Radio, Users, Wifi } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 type Run = { id: string; college_id: string; name: string; status: "running" | "paused" | "completed"; created_at: string; created_by: string };
