@@ -56,3 +56,6 @@ In Supabase Authentication settings, ensure email OTP/magic-link sign-in is enab
 ## Verified live state
 
 On 2026-10-19, the Supabase project was reachable, its existing tables and RLS policies were inspected, and the compatibility SQL ran successfully. The Supabase security advisor no longer reported the previously missing SELECT policies for `alerts`, `attendance`, and `gps_positions`; it still reported leaked-password protection disabled. Vercel environment variables were updated for all three deployment environments. The GitHub application changes remain in draft PR review and the production website has not been verified end-to-end with an authenticated staff account.
+
+
+For the hardware-free simulator, see [`VIRTUAL_LAB.md`](VIRTUAL_LAB.md). Its `simulation_*` tables are separate from the operational tables and use creator-scoped RLS policies.
