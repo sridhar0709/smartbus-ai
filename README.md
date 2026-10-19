@@ -1,30 +1,32 @@
 # SmartBus AI
 
-A responsive college fleet intelligence dashboard for bus tracking, attendance operations, and parent notifications.
+A responsive college fleet intelligence dashboard for bus tracking, attendance operations, parent notification previews, and a hardware-free Virtual Lab.
 
 ## Stack
 - Next.js 15, React 19, TypeScript
 - Tailwind CSS 4
 - Supabase Postgres and JavaScript client
-- MapLibre GL (live map integration planned)
 - Vercel
 
 ## Run locally
 ```bash
 npm install
 cp .env.example .env.local
-# Confirm the intended Supabase project URL and publishable key in .env.local
+# Fill NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local
 npm run dev
 ```
 
 Open http://localhost:3000.
 
 ## Supabase
-The application is configured for the `smartbus-ai` Supabase project in `ap-south-1`. `.env.example` contains the project URL and its publishable key; these are client-side settings and never a service-role/secret key.
+The app uses the `smartbus-ai` Supabase project in `ap-south-1`. Use the project's URL and publishable key in `.env.local` and Vercel. The publishable key is intended for browser clients; never expose a service-role or secret key in client code or any `NEXT_PUBLIC_*` variable.
 
-The dashboard expects tables for colleges, routes, drivers, buses, GPS positions, trips, attendance, and alerts. It queries existing operational data via Supabase Auth and relies on database Row Level Security (RLS) to restrict each staff member to their college. See [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md) for the expected table/column contract, authentication settings, security requirements, and verification checklist.
+The live dashboard reads operational buses, routes, drivers, locations, trips, attendance and alerts through Supabase Auth. Access depends on the project's college-scoped Row Level Security (RLS) policies.
 
-**Important:** The connected Supabase project was inactive and is currently restoring. Database connectivity and the real schema could not yet be verified because database connections timed out/refused during restoration. Do not assume the dashboard is live until the schema and RLS checks pass. Never disable RLS or expose the service-role key to make the dashboard load.
+## Virtual Lab
+Open **Virtual Lab** in the dashboard navigation to simulate three buses, six synthetic students, GPS movement, RFID boarding/exit, and parent-alert previews. The Virtual Lab writes only to the isolated `simulation_runs`, `simulation_buses`, `simulation_students`, `simulation_locations`, and `simulation_events` tables. It does not send real messages or write to operational attendance, fleet, or alert tables.
 
-## Current limitations
-Dashboard visualizations and fleet markers include sample UI styling. Live GPS ingestion, college-membership authentication and RLS policies, operational data validation, and parent SMS/WhatsApp delivery remain to be implemented and tested. Do not use for real transport operations until those controls are verified.
+See [`docs/VIRTUAL_LAB.md`](docs/VIRTUAL_LAB.md) for usage and [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md) for configuration and deployment checks.
+
+## Validation
+A Vercel preview build for the Virtual Lab branch passed Next.js compilation and TypeScript validation. Before merging, test the Virtual Lab using an authenticated college member and confirm that simulation rows remain isolated from operational data. Do not use the system for real transport operations until production authentication, RLS, and end-to-end workflows have been fully verified.
