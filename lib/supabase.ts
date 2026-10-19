@@ -1,11 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-// Browser-safe client. Never place a Supabase service-role key in NEXT_PUBLIC_*.
+// This is a browser-only client. The publishable key is safe to expose only
+// when every exposed table is protected by correctly configured RLS policies.
 export const supabase =
-  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+  supabaseUrl && supabaseKey ? createBrowserClient(supabaseUrl, supabaseKey) : null;
 
 export type BusRecord = {
   id: string;
@@ -54,19 +55,29 @@ const emptySnapshot = (configured: boolean, authenticated = false): DashboardSna
   attendanceToday: 0, alerts: [],
 });
 
+/** Return the local calendar date as YYYY-MM-DD without locale-dependent parsing. */
+export function localDateKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 /**
- * Reads operational data using the current user's Supabase session.
- * Existing RLS policies scope rows to the user's college membership.
- * No anonymous fallback or privileged key is used.
+ * Reads operational data using the current browser user's Supabase session.
+ * Every query relies on database RLS for college-level authorization.
+ * Errors are surfaced to the UI instead of silently presenting fake data.
  */
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
   if (!supabase) return emptySnapshot(false);
 
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) throw sessionError;
-  if (!session) return emptySnapshot(true, false);
+  // Do not treat a cached session object as proof of identity. Supabase's
+  // authenticated requests and RLS policies enforce access at the database.
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (!user) return emptySnapshot(true, false);
 
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = localDateKey();
   const [busRes, routeRes, driverRes, locationRes, tripRes, attendanceRes, alertRes] =
     await Promise.all([
       supabase.from("buses")
@@ -79,7 +90,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
         .order("recorded_at", { ascending: false }).limit(500),
       supabase.from("trips")
         .select("id,bus_id,route_id,driver_id,started_at,ended_at,status")
-        .is("ended_at", null).order("started_at", { ascending: false }),
+        .is("ended_at", null).order("started_at", { ascending: false }).limit(200),
       supabase.from("attendance").select("id", { count: "exact", head: true })
         .eq("attendance_date", today),
       supabase.from("alerts")
@@ -91,7 +102,7 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
     .find((result) => result.error)?.error;
   if (firstError) throw firstError;
 
-  // Keep only the newest GPS point for each bus.
+  // Queries are newest-first, so the first row for each bus is its latest GPS fix.
   const newestByBus = new Map<string, LocationRecord>();
   for (const row of (locationRes.data ?? []) as LocationRecord[]) {
     if (!newestByBus.has(row.bus_id)) newestByBus.set(row.bus_id, row);

@@ -6,3 +6,74 @@
 @media(max-width:1050px){.sidebar{width:220px}.dashboard-grid,.bottom-grid{grid-template-columns:1fr}.map-canvas{height:360px}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.sidebar{position:fixed;left:-270px;top:0;bottom:0;width:260px;transition:left .25s;box-shadow:20px 0 70px #0008}.sidebar-open{left:0}.mobile-close{display:block}.scrim{display:block;position:fixed;inset:0;background:#0009;border:0;z-index:9}.hamburger{display:flex;padding:0}.topbar{height:62px;padding:0 17px}.crumb{gap:8px}.top-actions{gap:12px}.live-pill{font-size:8px;padding:7px}.top-divider{display:none}.content{padding:25px 15px}.page-heading{align-items:flex-start;gap:10px}.page-heading h1{font-size:24px}.page-heading p{font-size:11px;line-height:1.5}.date-btn{font-size:0;gap:5px;padding:9px}.date-btn svg{width:15px}.eyebrow{font-size:8px}.stats-grid{gap:10px}.stat-card{padding:14px}.stat-icon{width:31px;height:31px}.stat-label{font-size:8px;letter-spacing:.6px}.stat-value{font-size:24px}.stat-detail{font-size:9px;flex-wrap:wrap}.dashboard-grid,.bottom-grid{gap:13px}.panel{padding:15px}.panel-title{font-size:14px}.map-canvas{height:290px}.map-footer{align-items:flex-start;flex-direction:column}.map-legend{gap:11px}.map-legend span{font-size:9px}.fleet-status{min-width:68px}.fleet-info b{font-size:10px}.fleet-info span{font-size:9px}.fleet-info small{font-size:8px}.activity-row{gap:9px}.activity-copy b{font-size:10px}.activity-copy span{font-size:9px}.activity-row time{font-size:8px}.healthy-badge{font-size:8px}.footer{font-size:9px;gap:10px;line-height:1.5}.footer span:last-child{white-space:nowrap}}
 @media(max-width:390px){.top-actions{gap:8px}.live-pill{letter-spacing:.4px}.stats-grid{gap:8px}.stat-card{padding:12px}.stat-value{font-size:22px}.fleet-bus-icon{width:30px;height:30px}.fleet-row{gap:8px;padding:12px 3px}.fleet-status{min-width:60px}.activity-row time{display:none}}
+
+
+/* Virtual Hardware Lab: visual layer for the isolated simulator */
+.virtual-lab{display:flex;flex-direction:column;gap:18px}
+.lab-hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.6fr);gap:24px;padding:26px;overflow:hidden;background:radial-gradient(ellipse at 90% 20%,#b7f36b14,transparent 50%),linear-gradient(140deg,#141923,#101219)}
+.lab-kicker{display:flex;align-items:center;gap:8px;color:var(--lime);font-size:10px;letter-spacing:1.3px;font-weight:700}
+.lab-kicker .live-dot{display:inline-block}
+.lab-hero h2{font:600 clamp(24px,2.6vw,34px) 'Space Grotesk';letter-spacing:-1.2px;margin:14px 0 9px}
+.lab-hero p{color:#9aa1b0;font-size:12px;line-height:1.8;max-width:640px;margin:0}
+.lab-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
+.lab-primary{background:var(--lime);border-color:var(--lime);color:#11170c;font-weight:700}
+.lab-primary:disabled,.date-btn:disabled{opacity:.55;cursor:not-allowed}
+.lab-hero-art{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:210px}
+.lab-radar{width:172px;height:172px;border-radius:50%;border:1px solid #b7f36b45;position:relative;display:grid;place-items:center;background:repeating-radial-gradient(circle,transparent 0 25px,#b7f36b14 26px 27px)}
+.lab-radar:before,.lab-radar:after{content:"";position:absolute;background:#b7f36b24}
+.lab-radar:before{height:1px;width:100%}.lab-radar:after{width:1px;height:100%}
+.lab-radar>span{position:absolute;width:100%;height:100%;border-radius:50%;border:1px solid #b7f36b20}
+.lab-radar>span:nth-child(2){transform:scale(.72)}.lab-radar>span:nth-child(3){transform:scale(.42)}
+.lab-radar-center{width:48px;height:48px;display:grid;place-items:center;border-radius:15px;background:#b7f36b;color:#11170c;z-index:1;box-shadow:0 0 32px #b7f36b35}
+.lab-art-caption{display:flex;align-items:center;gap:7px;margin-top:12px;font-size:9px;letter-spacing:1.4px;color:#8c94a4}
+.lab-message{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:10px;font-size:12px;line-height:1.6}
+.lab-message button{margin-left:auto;background:transparent;border:0;font-size:19px;line-height:1}
+.lab-error{color:#ffb4a8;background:#f0443815;border:1px solid #f0443835}
+.lab-success{color:#c9f69a;background:#b7f36b12;border:1px solid #b7f36b30}
+.lab-empty{display:flex;align-items:center;justify-content:center;gap:10px;flex-direction:column;min-height:190px;text-align:center;color:#9aa1b0;padding:26px}
+.lab-empty b{color:#f2f4fa;font:600 16px 'Space Grotesk'}
+.lab-empty span{max-width:440px;line-height:1.7;font-size:12px}
+.lab-lock{font-size:22px}
+.lab-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.lab-stat{border:1px solid #252934;border-radius:13px;background:linear-gradient(145deg,#12151d,#101219);padding:17px}
+.lab-stat>span{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.8px;color:#9aa1b0;font-weight:700}
+.lab-stat>span svg{color:var(--lime)}
+.lab-stat strong{display:block;font:600 29px 'Space Grotesk';margin:10px 0 4px}
+.lab-stat small{font-size:10px;color:#777e8e}
+.lab-columns{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:18px}
+.lab-panel{padding:20px}
+.lab-panel .panel-head{align-items:center;margin-bottom:16px}
+.lab-panel .panel-title svg{color:var(--lime)}
+.lab-status{font-size:10px;text-transform:uppercase;letter-spacing:1px;padding:6px 9px;border-radius:20px;background:#f3a45a14;color:#f5b36e;border:1px solid #f3a45a30}
+.lab-status.running{background:#b7f36b12;color:var(--lime);border-color:#b7f36b30}
+.lab-status.completed{color:#9ba1b0;background:#ffffff08;border-color:#ffffff15}
+.lab-bus-list{display:flex;flex-direction:column}
+.lab-bus{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid #242833;min-width:0}
+.lab-bus-icon{width:38px;height:38px;flex-shrink:0;display:grid;place-items:center;border-radius:11px;background:#b7f36b13;color:var(--lime)}
+.lab-bus-copy{flex:1;min-width:0}
+.lab-bus-copy b{display:flex;align-items:center;gap:8px;font-size:12px}
+.lab-bus-copy b span{font-size:9px;font-weight:500;color:var(--lime);background:#b7f36b10;padding:3px 6px;border-radius:5px;text-transform:capitalize}
+.lab-bus-copy small{display:block;font-size:10px;color:#858b9b;margin-top:5px;overflow-wrap:anywhere}
+.lab-bus time,.lab-event time{font-size:10px;color:#858b9b;white-space:nowrap}
+.lab-label{display:block;color:#a4a9b7;font-size:11px;font-weight:600;margin:14px 0 7px}
+.lab-select{display:block;width:100%;padding:11px 12px;border-radius:9px;border:1px solid #303542;background:#0d1017;color:#f2f4fa;font-size:12px}
+.lab-rfid-card{display:flex;align-items:center;gap:10px;padding:12px;margin:14px 0;border-radius:10px;border:1px solid #b7f36b26;background:#b7f36b08}
+.lab-rfid-chip{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;background:#b7f36b18;color:var(--lime)}
+.lab-rfid-card>div:nth-child(2){flex:1;min-width:0}
+.lab-rfid-card b,.lab-rfid-card small{display:block;overflow-wrap:anywhere}
+.lab-rfid-card b{font-size:11px}.lab-rfid-card small{font-size:10px;color:#858b9b;margin-top:4px}
+.lab-rfid-card>span{font-size:9px;color:var(--lime);text-transform:uppercase;letter-spacing:.6px}
+.lab-full{width:100%;justify-content:center;margin-top:9px}
+.lab-footnote{font-size:10px;line-height:1.7;color:#777e8e;margin:13px 0 0}
+.lab-events{padding-bottom:8px}
+.lab-event-list{display:flex;flex-direction:column}
+.lab-event{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid #242833}
+.lab-event-icon{width:32px;height:32px;flex-shrink:0;border-radius:9px;display:grid;place-items:center;background:#b7f36b12;color:var(--lime)}
+.lab-event-icon.alert{background:#f3a45a16;color:#f5b36e}
+.lab-event-icon.rfid_boarding,.lab-event-icon.rfid_exit{background:#76b5ff15;color:#76b5ff}
+.lab-event>div:nth-child(2){flex:1;min-width:0}
+.lab-event b,.lab-event small{display:block}
+.lab-event b{font-size:11px;line-height:1.6;font-weight:500}
+.lab-event small{font-size:10px;color:#858b9b;margin-top:4px;text-transform:capitalize}
+@media(max-width:1050px){.lab-hero{grid-template-columns:1fr}.lab-hero-art{display:none}.lab-columns{grid-template-columns:1fr}.lab-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.lab-hero,.lab-panel{padding:16px}.lab-stat-grid{gap:8px}.lab-stat{padding:12px}.lab-stat strong{font-size:24px}.lab-bus{align-items:flex-start;flex-wrap:wrap}.lab-bus time{margin-left:50px}.lab-event{align-items:flex-start;flex-wrap:wrap}.lab-event time{margin-left:44px}}
