@@ -72,7 +72,7 @@ export default function VirtualLab() {
     if (!membership?.college_id) throw new Error("Your account has no college membership. Ask a college administrator to grant access.");
     setCollegeId(membership.college_id);
     const { data: latest, error: runError } = await supabase.from("simulation_runs")
-      .select("*").eq("college_id", membership.college_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      .select("*").eq("college_id", membership.college_id).eq("created_by", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (runError) throw runError;
     if (latest) await refreshRun(latest.id);
   }, [refreshRun]);
